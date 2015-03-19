@@ -1,3 +1,6 @@
+# History
+
+A terribly messy history, yes.
 
 in early node <= 0.2 things were event based
 
@@ -13,7 +16,7 @@ net.createServer(function(socket) {
         socket.end();
     });
 }).listen(8124,'127.0.0.1');
-````
+```
 
 Then there was something called sys.pump for a very brief period of time, but it was the foundational concept for what became the stream pipe method in 0.4.2 which made great sense, because now all streams inherited this pipe method which of course is used to pipe data from stream to stream:
 
@@ -47,7 +50,7 @@ But what we really wanted was transformation:
 
 ``` js
 input.pipe(transformer).pipe(output);
-````
+```
 
 in 0.4.2 pipe wasn't chainable but that was changed in 0.6 (I think it just returned null)
 
@@ -58,72 +61,68 @@ However, we still have this back pressure issue, non-asynchronous piping and all
 
 So work began on Streams 2  So this is a big thing, there is a Streams 1 which I've touched on lightly but there is now a Streams 2.
 
-
-
-original streams are like "push streams" (the source is pushing the data out) - this is streams 1
+Original streams are like "push streams" (the source is pushing the data out) - this is streams 1
 pull streams are like a drinking straw
 then there are pump streams, which is kind of like both. - this is streams 2
 
 So lots of versions of streams, it really comes down to which is the most appropriate for any given situation.
 
-///// Streams 1:
+# Streams 1:
 
 back pressure in pump streams: 
 
 back pressure propagates back when .write() === false
 
 ``` js
-source                      // emits "readable"
+source                // emits "readable"
     .pipe(transform)
     .pipe(sink);
 ```
 
 ``` js
 source
-    .pipe(transform)        // write(data), emits "readable"
+    .pipe(transform) // write(data), emits "readable"
     .pipe(sink);
 ```
 
 ``` js
 source
     .pipe(transform)
-    .pipe(sink);            // if the sink is paused, or can't write for some reason, then it's write returns false (that is: write(data) === false in the step above)
+    .pipe(sink);     // if the sink is paused, or can't write for some reason, then it's
+                     // write returns false (that is: write(data) === false in the step above)
 ```
 
 ``` js
 source
-    .pipe(transform)        // write(data) === false, this propagates to source, and source will now be paused as well.
+    .pipe(transform) // write(data) === false, this propagates to source, and source will now be paused as well.
     .pipe(sink);
 ```
 
 ``` js
-source                      // source is now paused
-    .pipe(transform)        // transform is now paused
-    .pipe(sink);            // sink is now paused
+source               // source is now paused
+    .pipe(transform) // transform is now paused
+    .pipe(sink);     // sink is now paused
 ```
 
 But it is interesting to note that it takes N writes from the source corresponding to N stages in the pipe chain to learn that write is false, or that the streams are paused.
 
 So back pressure does not propagate instantly.
 
-////// Ok, what other kinds of streams are there?
+# Did we have any other choice?
 
-gozala/reducers                         - was inspired by clojure
-Raynos/recurse-stream                   - 
-dominictarr/strm
-dominictarr/pull-stream
-creationix/min-stream
-rxjs
-baconjs
-streams 3 === streams 1 | streams 2
+* gozala/reducers          // was inspired by clojure
+* Raynos/recurse-stream
+* dominictarr/strm
+* dominictarr/pull-stream
+* creationix/min-stream
+* rxjs
+* baconjs
 
-See also FRP
+and of course now we have: 
 
-/////// We might get streams in the browser!
+* streams 3 === streams 1 | streams 2
 
-////////////////////////////////////
-
-// 2012: LXJS - substack:
+# But ultimately
 
 Streams let you treat programs as pieces that can be plumbed together.
 
@@ -149,22 +148,6 @@ process.stdin.pipe(ts).pipe(process.stdout);
 
 For handling back pressure, you use pause() and resume().
 
-A pause stream:
-```js
-
-```
-
-///////////////////////////////
-
-Streams 1: (old streams)
-
-Streams 2
-
-Streams 3
-
-Streams in general: 
-
-Readable Stream: A readable stream is a source of data
 Transform Stream: A duplex stream - a readable side and a writable side
 Writable Stream: A destination for data
 
@@ -182,7 +165,6 @@ Restaurants analogy (instead of doctor analogy)!
 Now in node there really is not such a thing as a "pull stream" or a "push stream", actually there is just readablestream 
 and however you use it determines whether it is flowing data to you or not which matches the push and pull concepts.
 
-//////////////
 Doing streams in a push style gives you code like this:
 
 ```js
@@ -207,7 +189,6 @@ readable
     .pipe(writable);
 ```
 
-//////////////
 Doing streams in a pull style gives you code like this:
 
 ```js
@@ -217,10 +198,14 @@ if(val === null){
 }
 ```
 
-////////////////
-So how do we implement a stream?
+# So how do we implement a stream? {"Node": "^0.10"}
 
 So node gives you base classes that you can use to implement streams:
+
+Readable, Writable, Duplex, Transform, and PassThrough
+
+
+## Readable:
 
 Readable: implement _read([size])
 Writable: implement _write(chunk, encoding, cb)
@@ -248,7 +233,7 @@ MyReadable.prototype._read = function() {
 so _read is called once by Readable and to get another _read to happen, you'd call self.push(chunk);
 self.push(null); // to signal the end of data.
 
-* More detail on Writable stream:
+## Writable:
 
 var stream = require('stream');
 var util = require('util');
@@ -271,7 +256,7 @@ So, back pressure and buffering is handled for you according to highWaterMark
 
 All of this is handled for you under the hood by the new streams.
 
-* More detail on the Transform stream:
+## Transform:
 
 var stream = require('stream');
 var util = require('util');
@@ -299,9 +284,12 @@ future stages in the chain.  But if you have multiple values that result from on
 
 Then implement _flush if you want to send something at the very end.
 
+## Duplex: 
 
-http://thlorenz.github.io/stream-viz/
 
+## More info:
+Again all of these classes, Readable, Writable, Transform, Duplex, PassThrough are all EventEmitters so you can attach listeners and emit events as you normally would.
 
+# And gulp?
 
 
