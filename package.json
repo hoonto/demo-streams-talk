@@ -1,0 +1,14 @@
+{
+  "name": "streams-talk",
+  "version": "1.0.0",
+  "description": "a talk about streams",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "split": "^0.3.3"
+  }
+}
